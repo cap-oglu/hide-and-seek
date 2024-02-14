@@ -11,22 +11,48 @@ public class ManController : MonoBehaviour
     private float viewAngle = 45f;
 
     private bool hasLineofSight = false;
+    private Vector3 targetPosition;
     // Start is called before the first frame update
     void Start()
     {
         npc = GameObject.FindGameObjectWithTag("NPC");
+        targetPosition = transform.position; // Initialize targetPosition with the player's starting position
     }
 
     // Update is called once per frame
     void Update()
     {
-        float moveX = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
-        float moveY = Input.GetAxis("Vertical") * speed * Time.deltaTime;
+        // Check for left mouse button click
+        if (Input.GetMouseButton(0))
+        {
+            // Convert mouse position to world space
+            targetPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            targetPosition.z = transform.position.z; // Ensure target position has the same z-coordinate as the player
+        }
 
-        transform.position += new Vector3(moveX, moveY, 0);
+        // Move towards the target position
+        MoveTowardsTargetPosition();
+    }
 
-        //DrawFOVCircle();
-        //DrawFOVLines();
+    void MoveTowardsTargetPosition()
+    {
+        // Calculate the direction vector towards the target position
+        Vector3 direction = (targetPosition - transform.position).normalized;
+        float distance = Vector3.Distance(transform.position, targetPosition);
+
+        // Check if the player is close enough to the target position to stop moving
+        if (distance > 0.1f) // Threshold distance, adjust as needed
+        {
+            // Move the player towards the target position
+            transform.position += direction * speed * Time.deltaTime;
+
+            // Optional: Adjust player orientation to face the direction of movement
+            if (direction != Vector3.zero)
+            {
+                float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90; // Adjusted for sprite facing up
+                transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle));
+            }
+        }
     }
 
     /*private void DrawFOVCircle()
@@ -78,7 +104,7 @@ public class ManController : MonoBehaviour
     {
         if (!angleIsGlobal)
         {
-            angleInDegrees += transform.eulerAngles.z;
+            angleInDegrees += transform.eulerAngles.z + 90; 
         }
         return new Vector3(Mathf.Cos(angleInDegrees * Mathf.Deg2Rad), Mathf.Sin(angleInDegrees * Mathf.Deg2Rad), 0);
     }
@@ -86,7 +112,7 @@ public class ManController : MonoBehaviour
     private void FixedUpdate()
     {
         Vector2 directionToNpc = npc.transform.position - transform.position;
-        float angleToNpc = Vector2.Angle(transform.right, directionToNpc); // Assuming the player's right is the forward direction
+        float angleToNpc = Vector2.Angle(transform.up, directionToNpc); // Assuming the player's up is the forward direction
         if (angleToNpc <= viewAngle / 2 && directionToNpc.magnitude <= maxVisibleDistance)
         {
             RaycastHit2D ray = Physics2D.Raycast(transform.position, npc.transform.position - transform.position, maxVisibleDistance);
