@@ -12,10 +12,12 @@ public class ManController : MonoBehaviour
 
     private bool hasLineofSight = false;
     private Vector3 targetPosition;
-    // Start is called before the first frame update
+    private GameObject[] allNPCs;
+    
     void Start()
     {
-        npc = GameObject.FindGameObjectWithTag("NPC");
+        allNPCs = GameObject.FindGameObjectsWithTag("NPC");
+        //npc = GameObject.FindGameObjectWithTag("NPC");
         targetPosition = transform.position; // Initialize targetPosition with the player's starting position
     }
 
@@ -32,6 +34,8 @@ public class ManController : MonoBehaviour
 
         // Move towards the target position
         MoveTowardsTargetPosition();
+        Debug.DrawLine(transform.position, transform.position + transform.up * 2, Color.magenta);
+        Debug.DrawLine(transform.position, transform.position + transform.right * 2, Color.cyan);
     }
 
     void MoveTowardsTargetPosition()
@@ -51,8 +55,11 @@ public class ManController : MonoBehaviour
             {
                 float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90; // Adjusted for sprite facing up
                 transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle));
+                
             }
         }
+
+
     }
 
     /*private void DrawFOVCircle()
@@ -88,9 +95,14 @@ public class ManController : MonoBehaviour
     }*/
 
     private void OnDrawGizmos()
-    {
+    {   
+       
+
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(transform.position, maxVisibleDistance);
+
+        //Gizmos.color = Color.magenta;
+        //Gizmos.DrawLine(transform.up, transform.up + new Vector3(0, 1, 0));
 
         Vector3 viewAngleA = DirFromAngle(-viewAngle / 2, false);
         Vector3 viewAngleB = DirFromAngle(viewAngle / 2, false);
@@ -111,28 +123,30 @@ public class ManController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        Vector2 directionToNpc = npc.transform.position - transform.position;
-        float angleToNpc = Vector2.Angle(transform.up, directionToNpc); // Assuming the player's up is the forward direction
-        if (angleToNpc <= viewAngle / 2 && directionToNpc.magnitude <= maxVisibleDistance)
-        {
-            RaycastHit2D ray = Physics2D.Raycast(transform.position, npc.transform.position - transform.position, maxVisibleDistance);
-            if (ray.collider != null)
+        foreach(GameObject npc in allNPCs) {
+            Vector2 directionToNpc = npc.transform.position - transform.position;
+            float angleToNpc = Vector2.Angle(transform.up, directionToNpc); // Assuming the player's up is the forward direction
+            if (angleToNpc <= viewAngle / 2 && directionToNpc.magnitude <= maxVisibleDistance)
             {
-                hasLineofSight = ray.collider.CompareTag("NPC");
-                if (hasLineofSight)
+                RaycastHit2D ray = Physics2D.Raycast(transform.position, npc.transform.position - transform.position, maxVisibleDistance);
+                if (ray.collider != null)
                 {
-                    Debug.DrawRay(transform.position, npc.transform.position - transform.position, Color.green);
+                    hasLineofSight = ray.collider.CompareTag("NPC");
+                    if (hasLineofSight)
+                    {
+                        Debug.DrawRay(transform.position, npc.transform.position - transform.position, Color.green);
 
-                }
-                else
-                {
-                    Debug.DrawRay(transform.position, npc.transform.position - transform.position, Color.red);
+                    }
+                    else
+                    {
+                        Debug.DrawRay(transform.position, npc.transform.position - transform.position, Color.red);
+                    }
                 }
             }
-        }
-        else
-        {
-            //Debug.DrawRay(transform.position, npc.transform.position - transform.position, Color.red);
+            else
+            {
+                //Debug.DrawRay(transform.position, npc.transform.position - transform.position, Color.red);
+            }
         }
     }
 }
